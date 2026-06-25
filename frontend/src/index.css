@@ -325,26 +325,89 @@ button {
   padding: 100px 48px;
 }
 
-.scrolly-banner {
-  max-width: 600px;
-  background: rgba(7, 13, 10, 0.6);
-  padding: 30px;
+.scrolly-marketing-panels {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.scrolly-panel {
+  position: absolute;
+  width: 380px;
+  padding: 24px;
+  background: rgba(10, 19, 15, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-gold);
   border-radius: 16px;
+  box-shadow: var(--glass-shadow);
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 10;
+  pointer-events: auto;
+}
+
+.scrolly-panel.left {
+  left: 8%;
+  top: 30%;
   border-left: 4px solid var(--primary-gold);
-  backdrop-filter: blur(8px);
 }
 
-.scrolly-banner h1 {
-  font-size: 3rem;
-  line-height: 1.2;
+.scrolly-panel.right {
+  right: 8%;
+  top: 30%;
+  border-right: 4px solid var(--primary-gold);
+}
+
+.scrolly-panel.active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.scrolly-panel h3 {
+  font-size: 1.6rem;
   color: var(--text-gold);
-  margin-bottom: 12px;
+  margin-bottom: 8px;
+  font-family: var(--font-serif);
 }
 
-.scrolly-banner p {
-  font-size: 1.1rem;
+.scrolly-panel p {
+  font-size: 0.95rem;
   color: var(--text-white);
+  line-height: 1.5;
 }
+
+.scrolly-tag {
+  display: inline-block;
+  font-size: 0.75rem;
+  color: var(--primary-gold);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+/* Mobile responsive styling for the marketing panels */
+@media(max-width: 768px) {
+  .scrolly-panel {
+    width: 90% !important;
+    left: 5% !important;
+    right: 5% !important;
+    top: auto !important;
+    bottom: 80px !important;
+    padding: 16px !important;
+    border-radius: 12px !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-bottom: 3px solid var(--primary-gold) !important;
+    transform: translateY(10px);
+  }
+}
+
 
 .scrolly-instructions {
   align-self: center;
