@@ -426,35 +426,11 @@ const Home = ({ user, handleLogout }) => {
         {loadingServices ? (
           <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-gold)' }}>Loading gallery...</div>
         ) : services.length === 0 ? (
-          // Default beautiful local images if database is empty
-          <div className="gallery-grid">
-            <div className="glass gallery-card">
-              <div className="gallery-img-wrapper">
-                <img src="/frames/frame_001.jpg" alt="Betel Plate Theme" className="gallery-img" />
-              </div>
-              <div className="gallery-info">
-                <h3 className="gallery-title">Classic Betel Leaf Flower Layout</h3>
-                <p className="gallery-desc">Traditional betel leaf placement with soft orange and pink floral highlights.</p>
-              </div>
-            </div>
-            <div className="glass gallery-card">
-              <div className="gallery-img-wrapper">
-                <img src="/frames/frame_010.jpg" alt="Traditional Lemon Flower Theme" className="gallery-img" />
-              </div>
-              <div className="gallery-info">
-                <h3 className="gallery-title">Traditional Lemon Flower Setup</h3>
-                <p className="gallery-desc">White daisy flowers accented with polished green lemons and baby's breath lining.</p>
-              </div>
-            </div>
-            <div className="glass gallery-card">
-              <div className="gallery-img-wrapper">
-                <img src="/frames/frame_021.jpg" alt="Rotating Carousel Wheel" className="gallery-img" />
-              </div>
-              <div className="gallery-info">
-                <h3 className="gallery-title">Rotating Carousel Wheel</h3>
-                <p className="gallery-desc">Double-deck golden miniature Ferris wheel customized with dolls and plate holders.</p>
-              </div>
-            </div>
+          <div className="glass" style={{ padding: '40px', textAlign: 'center', maxWidth: '600px', margin: '0 auto', border: '1px dashed var(--border-gold)' }}>
+            <p style={{ color: 'var(--text-gray)', fontSize: '1rem' }}>
+              No custom design photos have been uploaded to the gallery yet. 
+              Admin can upload decoration photos dynamically from the Admin Panel.
+            </p>
           </div>
         ) : (
           <div className="gallery-grid">
