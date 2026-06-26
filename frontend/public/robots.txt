@@ -3,4 +3,4 @@ Allow: /
 Disallow: /admin
 Disallow: /orders
 
-Sitemap: https://thambulam_plate_decorations.vercel.app/sitemap.xml
+Sitemap: https://thambulam-plate-decorations.vercel.app/sitemap.xml
