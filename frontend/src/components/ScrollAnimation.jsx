@@ -152,14 +152,7 @@ const ScrollAnimation = () => {
             <img 
               src={`/frames/frame_${getPaddedFrameString()}.jpg`} 
               alt="Thambulam Plate Animation" 
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-                // Scale up the image on mobile to crop out the left/right baked-in black bars and the watermark
-                transform: 'scale(1.8)',
-                transformOrigin: 'center center',
-              }}
+              className="scrolly-mobile-img"
             />
           </div>
         )}
