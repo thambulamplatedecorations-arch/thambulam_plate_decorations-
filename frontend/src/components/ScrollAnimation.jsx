@@ -165,30 +165,42 @@ const ScrollAnimation = () => {
           <div className="scrolly-marketing-panels">
             {/* Stage 1: Traditional Betel (Frames 1-5) */}
             <div className={`scrolly-panel left ${currentFrame >= 1 && currentFrame <= 5 ? 'active' : ''}`}>
-              <span className="scrolly-tag">Authentic Themes</span>
-              <h3>Traditional Betel Layouts</h3>
-              <p>Layered with hand-plucked green betel leaves, fresh roses, and marigolds to welcome prosperity to your special functions.</p>
+              <img src="/details/detail_betel.jpg" alt="Betel Leaf Setup" className="scrolly-panel-img" />
+              <div className="scrolly-panel-content">
+                <span className="scrolly-tag">Authentic Themes</span>
+                <h3>Traditional Betel Layouts</h3>
+                <p>Layered with hand-plucked green betel leaves, fresh roses, and marigolds to welcome prosperity to your special functions.</p>
+              </div>
             </div>
 
             {/* Stage 2: Exquisite Dolls (Frames 6-11) */}
             <div className={`scrolly-panel right ${currentFrame >= 6 && currentFrame <= 11 ? 'active' : ''}`}>
-              <span className="scrolly-tag">Exquisite Artistry</span>
-              <h3>Custom Handpainted Dolls</h3>
-              <p>Charming traditional doll figurines dressed in authentic ethnic sarees, bringing cultural storytelling to your platter.</p>
+              <img src="/details/detail_doll.jpg" alt="Saree Doll Setup" className="scrolly-panel-img" />
+              <div className="scrolly-panel-content">
+                <span className="scrolly-tag">Exquisite Artistry</span>
+                <h3>Custom Handpainted Dolls</h3>
+                <p>Charming traditional doll figurines dressed in authentic ethnic sarees, bringing cultural storytelling to your platter.</p>
+              </div>
             </div>
 
             {/* Stage 3: Lemons & Prosperity (Frames 12-16) */}
             <div className={`scrolly-panel left ${currentFrame >= 12 && currentFrame <= 16 ? 'active' : ''}`}>
-              <span className="scrolly-tag">Premium Quality</span>
-              <h3>Citrus & Blossom Setups</h3>
-              <p>Arrangements featuring fresh lemons, pure white daisies, and baby's breath detailing, symbolizing energy and growth.</p>
+              <img src="/details/detail_lemon.jpg" alt="Lemon and Blossoms Setup" className="scrolly-panel-img" />
+              <div className="scrolly-panel-content">
+                <span className="scrolly-tag">Premium Quality</span>
+                <h3>Citrus & Blossom Setups</h3>
+                <p>Arrangements featuring fresh lemons, pure white daisies, and baby's breath detailing, symbolizing energy and growth.</p>
+              </div>
             </div>
 
-            {/* Stage 4: Ferris Wheel Carousel (Frames 17-21) */}
+            {/* Stage 4: Ferris Wheel Carousel / Birdcage (Frames 17-21) */}
             <div className={`scrolly-panel right ${currentFrame >= 17 && currentFrame <= 21 ? 'active' : ''}`}>
-              <span className="scrolly-tag">Modern Innovation</span>
-              <h3>Revolving Ferris Wheels</h3>
-              <p>Stunning miniature rotating wheels with flower baskets, adding interactive charm and motion to the traditional platter.</p>
+              <img src="/details/detail_birdcage.png" alt="Birdcage Carousel Setup" className="scrolly-panel-img" />
+              <div className="scrolly-panel-content">
+                <span className="scrolly-tag">Modern Innovation</span>
+                <h3>Revolving Ferris Wheels</h3>
+                <p>Stunning miniature rotating wheels and birdcage baskets, adding interactive charm and motion to the traditional platter.</p>
+              </div>
             </div>
           </div>
 

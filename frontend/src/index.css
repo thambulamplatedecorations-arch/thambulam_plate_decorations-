@@ -391,6 +391,15 @@ button {
   margin-bottom: 6px;
 }
 
+.scrolly-panel-img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border-gold);
+}
+
 /* Mobile responsive styling for the marketing panels & splash screen */
 @media(max-width: 768px) {
   .scrolly-panel,
@@ -401,7 +410,7 @@ button {
     right: 5% !important;
     top: auto !important;
     bottom: 80px !important;
-    padding: 16px 20px !important;
+    padding: 12px !important;
     border-radius: 12px !important;
     border-left: none !important;
     border-right: none !important;
@@ -409,6 +418,11 @@ button {
     transform: translateY(15px) !important;
     opacity: 0 !important;
     pointer-events: none !important;
+    /* Flex side-by-side layout on mobile */
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 12px !important;
   }
 
   .scrolly-panel.active,
@@ -419,14 +433,33 @@ button {
     pointer-events: auto !important;
   }
 
+  .scrolly-panel-img {
+    width: 75px !important;
+    height: 75px !important;
+    border-radius: 8px !important;
+    margin-bottom: 0 !important;
+    flex-shrink: 0 !important;
+    border: 1px solid var(--border-gold) !important;
+  }
+
+  .scrolly-panel-content {
+    flex-grow: 1 !important;
+    text-align: left !important;
+  }
+
+  .scrolly-tag {
+    font-size: 0.65rem !important;
+    margin-bottom: 2px !important;
+  }
+
   .scrolly-panel h3 {
-    font-size: 1.3rem !important;
-    margin-bottom: 4px !important;
+    font-size: 1.05rem !important;
+    margin-bottom: 2px !important;
   }
 
   .scrolly-panel p {
-    font-size: 0.85rem !important;
-    line-height: 1.4 !important;
+    font-size: 0.75rem !important;
+    line-height: 1.3 !important;
   }
 
   .scrolly-mobile-img {
