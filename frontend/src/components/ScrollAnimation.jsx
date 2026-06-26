@@ -165,7 +165,8 @@ const ScrollAnimation = () => {
           <div className="scrolly-marketing-panels">
             {/* Stage 1: Traditional Betel (Frames 1-5) */}
             <div className={`scrolly-panel left ${currentFrame >= 1 && currentFrame <= 5 ? 'active' : ''}`}>
-              <img src="/details/detail_betel.jpg" alt="Betel Leaf Setup" className="scrolly-panel-img" />
+              <img src="/details/detail_betel.jpg" alt="Betel Leaf Setup" className="scrolly-panel-bg-img" />
+              <div className="scrolly-panel-overlay" />
               <div className="scrolly-panel-content">
                 <span className="scrolly-tag">Authentic Themes</span>
                 <h3>Traditional Betel Layouts</h3>
@@ -175,7 +176,8 @@ const ScrollAnimation = () => {
 
             {/* Stage 2: Exquisite Dolls (Frames 6-11) */}
             <div className={`scrolly-panel right ${currentFrame >= 6 && currentFrame <= 11 ? 'active' : ''}`}>
-              <img src="/details/detail_doll.jpg" alt="Saree Doll Setup" className="scrolly-panel-img" />
+              <img src="/details/detail_doll.jpg" alt="Saree Doll Setup" className="scrolly-panel-bg-img" />
+              <div className="scrolly-panel-overlay" />
               <div className="scrolly-panel-content">
                 <span className="scrolly-tag">Exquisite Artistry</span>
                 <h3>Custom Handpainted Dolls</h3>
@@ -185,7 +187,8 @@ const ScrollAnimation = () => {
 
             {/* Stage 3: Lemons & Prosperity (Frames 12-16) */}
             <div className={`scrolly-panel left ${currentFrame >= 12 && currentFrame <= 16 ? 'active' : ''}`}>
-              <img src="/details/detail_lemon.jpg" alt="Lemon and Blossoms Setup" className="scrolly-panel-img" />
+              <img src="/details/detail_lemon.jpg" alt="Lemon and Blossoms Setup" className="scrolly-panel-bg-img" />
+              <div className="scrolly-panel-overlay" />
               <div className="scrolly-panel-content">
                 <span className="scrolly-tag">Premium Quality</span>
                 <h3>Citrus & Blossom Setups</h3>
@@ -195,7 +198,8 @@ const ScrollAnimation = () => {
 
             {/* Stage 4: Ferris Wheel Carousel / Birdcage (Frames 17-21) */}
             <div className={`scrolly-panel right ${currentFrame >= 17 && currentFrame <= 21 ? 'active' : ''}`}>
-              <img src="/details/detail_birdcage.png" alt="Birdcage Carousel Setup" className="scrolly-panel-img" />
+              <img src="/details/detail_birdcage.png" alt="Birdcage Carousel Setup" className="scrolly-panel-bg-img" />
+              <div className="scrolly-panel-overlay" />
               <div className="scrolly-panel-content">
                 <span className="scrolly-tag">Modern Innovation</span>
                 <h3>Revolving Ferris Wheels</h3>
