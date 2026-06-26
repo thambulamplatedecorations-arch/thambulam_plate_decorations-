@@ -27,6 +27,7 @@ const Home = ({ user, handleLogout }) => {
   const [customerPhone, setCustomerPhone] = useState(user ? user.phone : '');
   const [customerEmail, setCustomerEmail] = useState(user ? user.email : '');
   const [address, setAddress] = useState('');
+  const [loadingLocation, setLoadingLocation] = useState(false);
   const [notes, setNotes] = useState('');
   const [message, setMessage] = useState({ text: '', type: '' });
   const [submitting, setSubmitting] = useState(false);
@@ -273,6 +274,59 @@ const Home = ({ user, handleLogout }) => {
           })}
         </div>
       </div>
+    );
+  };
+
+  const handleGetLocation = () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser.");
+      return;
+    }
+    
+    setLoadingLocation(true);
+    
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,
+            {
+              headers: {
+                'Accept-Language': 'en'
+              }
+            }
+          );
+          if (response.ok) {
+            const data = await response.json();
+            if (data && data.display_name) {
+              setAddress(data.display_name);
+              setLoadingLocation(false);
+              return;
+            }
+          }
+          setAddress(`GPS Location: Latitude ${latitude.toFixed(6)}, Longitude ${longitude.toFixed(6)}`);
+        } catch (error) {
+          console.error("Error reverse geocoding:", error);
+          setAddress(`GPS Location: Latitude ${latitude.toFixed(6)}, Longitude ${longitude.toFixed(6)}`);
+        } finally {
+          setLoadingLocation(false);
+        }
+      },
+      (error) => {
+        console.error("Geolocation error:", error);
+        setLoadingLocation(false);
+        let errorMsg = "Unable to retrieve your location.";
+        if (error.code === error.PERMISSION_DENIED) {
+          errorMsg = "Location permission denied. Please enable location services in your browser settings.";
+        } else if (error.code === error.POSITION_UNAVAILABLE) {
+          errorMsg = "Location information is unavailable.";
+        } else if (error.code === error.TIMEOUT) {
+          errorMsg = "Request to get location timed out.";
+        }
+        alert(errorMsg);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
     );
   };
 
@@ -622,14 +676,29 @@ const Home = ({ user, handleLogout }) => {
 
             <div className="calc-form-group">
               <label htmlFor="address"><MapPin size={14} style={{verticalAlign:'middle', marginRight:'4px'}}/> Delivery Address</label>
-              <textarea 
-                id="address" 
-                className="calc-textarea" 
-                placeholder="Enter full venue or home address for plate delivery"
-                required
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-              />
+              <div className="address-input-wrapper">
+                <textarea 
+                  id="address" 
+                  className="calc-textarea" 
+                  placeholder="Enter full venue or home address for plate delivery"
+                  required
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                />
+                <button 
+                  type="button" 
+                  className="location-btn" 
+                  onClick={handleGetLocation}
+                  title="Get Current Location using GPS"
+                  disabled={loadingLocation}
+                >
+                  {loadingLocation ? (
+                    <span className="spinner-mini"></span>
+                  ) : (
+                    <MapPin size={20} />
+                  )}
+                </button>
+              </div>
             </div>
 
             {user && (

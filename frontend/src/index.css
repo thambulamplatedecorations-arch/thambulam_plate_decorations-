@@ -1655,3 +1655,57 @@ footer.site-footer .credits {
     padding: 10px;
   }
 }
+
+/* GPS Geolocation Button & Loading styling */
+.address-input-wrapper {
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.address-input-wrapper .calc-textarea {
+  flex: 1;
+}
+
+.location-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(197, 168, 92, 0.05);
+  border: 1px solid var(--border-gold);
+  border-radius: 8px;
+  color: var(--text-gold);
+  padding: 0 16px;
+  cursor: pointer;
+  transition: all 0.3s;
+  align-self: stretch;
+}
+
+.location-btn:hover:not(:disabled) {
+  background: rgba(197, 168, 92, 0.15);
+  border-color: var(--primary-gold);
+  color: var(--text-white);
+  box-shadow: 0 0 10px rgba(197, 168, 92, 0.15);
+}
+
+.location-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Mini loading spinner */
+.spinner-mini {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(197, 168, 92, 0.2);
+  border-top-color: var(--primary-gold);
+  border-radius: 50%;
+  animation: spinMini 0.8s linear infinite;
+}
+
+@keyframes spinMini {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
