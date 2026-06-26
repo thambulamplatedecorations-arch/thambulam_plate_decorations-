@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import ScrollAnimation from '../components/ScrollAnimation';
 import { API_URL, getAuthHeaders } from '../utils/api';
@@ -15,6 +15,14 @@ const Home = ({ user, handleLogout }) => {
   // Form States
   const [eventDate, setEventDate] = useState('');
   const [eventTime, setEventTime] = useState('');
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const [pickerMonth, setPickerMonth] = useState(new Date().getMonth());
+  const [pickerYear, setPickerYear] = useState(new Date().getFullYear());
+  const [customHour, setCustomHour] = useState(12);
+  const [customMinute, setCustomMinute] = useState(0);
+  const [customAmpm, setCustomAmpm] = useState('PM');
+  const pickerRef = useRef(null);
+
   const [customerName, setCustomerName] = useState(user ? user.name : '');
   const [customerPhone, setCustomerPhone] = useState(user ? user.phone : '');
   const [customerEmail, setCustomerEmail] = useState(user ? user.email : '');
@@ -97,6 +105,176 @@ const Home = ({ user, handleLogout }) => {
     };
     fetchServices();
   }, []);
+
+  // Close picker on outside click
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (pickerRef.current && !pickerRef.current.contains(event.target)) {
+        setIsPickerOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Sync custom hour/minute spinners when eventTime changes
+  useEffect(() => {
+    if (eventTime) {
+      const [h, min] = eventTime.split(':');
+      let hr = parseInt(h);
+      const m = parseInt(min);
+      const ap = hr >= 12 ? 'PM' : 'AM';
+      let displayHr = hr % 12;
+      if (displayHr === 0) displayHr = 12;
+      setCustomHour(displayHr);
+      setCustomMinute(m);
+      setCustomAmpm(ap);
+    }
+  }, [eventTime]);
+
+  const months = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+  const weekDays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+
+  const getDaysInMonth = (month, year) => new Date(year, month + 1, 0).getDate();
+  const getFirstDayOfMonth = (month, year) => new Date(year, month, 1).getDay();
+
+  const isPrevMonthDisabled = () => {
+    const today = new Date();
+    return pickerYear < today.getFullYear() || (pickerYear === today.getFullYear() && pickerMonth <= today.getMonth());
+  };
+
+  const handlePrevMonth = () => {
+    if (isPrevMonthDisabled()) return;
+    if (pickerMonth === 0) {
+      setPickerMonth(11);
+      setPickerYear(pickerYear - 1);
+    } else {
+      setPickerMonth(pickerMonth - 1);
+    }
+  };
+
+  const handleNextMonth = () => {
+    if (pickerMonth === 11) {
+      setPickerMonth(0);
+      setPickerYear(pickerYear + 1);
+    } else {
+      setPickerMonth(pickerMonth + 1);
+    }
+  };
+
+  const formatDateLabel = (dateStr) => {
+    if (!dateStr) return '';
+    const [y, m, d] = dateStr.split('-');
+    const dateObj = new Date(y, m - 1, d);
+    return dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
+  const formatTimeLabel = (timeStr) => {
+    if (!timeStr) return '';
+    const [h, min] = timeStr.split(':');
+    let hour = parseInt(h);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    hour = hour % 12 || 12;
+    return `${String(hour).padStart(2, '0')}:${min} ${ampm}`;
+  };
+
+  const updateCustomTime = (h, m, ampm) => {
+    let hr = parseInt(h);
+    if (ampm === 'PM' && hr < 12) hr += 12;
+    if (ampm === 'AM' && hr === 12) hr = 0;
+    const timeStr = `${String(hr).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    setEventTime(timeStr);
+  };
+
+  const incrementHour = () => {
+    let next = customHour === 12 ? 1 : customHour + 1;
+    updateCustomTime(next, customMinute, customAmpm);
+  };
+
+  const decrementHour = () => {
+    let prev = customHour === 1 ? 12 : customHour - 1;
+    updateCustomTime(prev, customMinute, customAmpm);
+  };
+
+  const incrementMinute = () => {
+    let next = (customMinute + 5) % 60;
+    updateCustomTime(customHour, next, customAmpm);
+  };
+
+  const decrementMinute = () => {
+    let prev = (customMinute - 5 + 60) % 60;
+    updateCustomTime(customHour, prev, customAmpm);
+  };
+
+  const toggleAmpm = () => {
+    const nextAmpm = customAmpm === 'AM' ? 'PM' : 'AM';
+    updateCustomTime(customHour, customMinute, nextAmpm);
+  };
+
+  const renderCalendarGrid = () => {
+    const blanks = [];
+    for (let i = 0; i < getFirstDayOfMonth(pickerMonth, pickerYear); i++) {
+      blanks.push(<div key={`blank-${i}`} className="calendar-day empty"></div>);
+    }
+
+    const dayButtons = [];
+    const daysInMonth = getDaysInMonth(pickerMonth, pickerYear);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = `${pickerYear}-${String(pickerMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      const dateObj = new Date(pickerYear, pickerMonth, d);
+      const isPast = dateObj < today;
+      const isSelected = eventDate === dateStr;
+      const isToday = d === new Date().getDate() && pickerMonth === new Date().getMonth() && pickerYear === new Date().getFullYear();
+
+      dayButtons.push(
+        <button
+          key={`day-${d}`}
+          type="button"
+          disabled={isPast}
+          className={`calendar-day ${isPast ? 'disabled' : ''} ${isSelected ? 'selected' : ''} ${isToday ? 'today' : ''}`}
+          onClick={() => {
+            setEventDate(dateStr);
+            if (!eventTime) {
+              setEventTime('09:00');
+            }
+          }}
+        >
+          {d}
+        </button>
+      );
+    }
+
+    return [...blanks, ...dayButtons];
+  };
+
+  const renderTimeCategory = (title, slots) => {
+    return (
+      <div className="time-category-group">
+        <span className="time-category-title">{title}</span>
+        <div className="time-slots-chips">
+          {slots.map(slot => {
+            const isSelected = eventTime === slot;
+            return (
+              <button
+                key={slot}
+                type="button"
+                className={`time-chip ${isSelected ? 'selected' : ''}`}
+                onClick={() => setEventTime(slot)}
+              >
+                {formatTimeLabel(slot)}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
 
   const handleBookingSubmit = async (e) => {
     e.preventDefault();
@@ -326,30 +504,120 @@ const Home = ({ user, handleLogout }) => {
               </select>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-              <div className="calc-form-group">
-                <label htmlFor="event-date"><Calendar size={14} style={{verticalAlign:'middle', marginRight:'4px'}}/> Event Date</label>
-                <input 
-                  type="date" 
-                  id="event-date" 
-                  className="calc-input"
-                  required
-                  value={eventDate}
-                  onChange={(e) => setEventDate(e.target.value)}
-                  min={new Date().toISOString().split('T')[0]}
-                />
+            <div className="calc-form-group relative-container" ref={pickerRef}>
+              <label><Calendar size={14} style={{verticalAlign:'middle', marginRight:'4px'}}/> Event Date & Time</label>
+              <div 
+                className={`custom-picker-trigger ${isPickerOpen ? 'active' : ''}`}
+                onClick={() => setIsPickerOpen(!isPickerOpen)}
+              >
+                <div className="trigger-date-section">
+                  <Calendar size={16} className="trigger-icon" />
+                  <span>{eventDate ? formatDateLabel(eventDate) : 'Select Event Date'}</span>
+                </div>
+                <div className="trigger-divider"></div>
+                <div className="trigger-time-section">
+                  <Clock size={16} className="trigger-icon" />
+                  <span>{eventTime ? formatTimeLabel(eventTime) : 'Select Time'}</span>
+                </div>
               </div>
-              <div className="calc-form-group">
-                <label htmlFor="event-time"><Clock size={14} style={{verticalAlign:'middle', marginRight:'4px'}}/> Event Time</label>
-                <input 
-                  type="time" 
-                  id="event-time" 
-                  className="calc-input"
-                  required
-                  value={eventTime}
-                  onChange={(e) => setEventTime(e.target.value)}
-                />
-              </div>
+
+              {isPickerOpen && (
+                <div className="datetime-picker-dropdown glass">
+                  <div className="picker-grid">
+                    {/* Left Column: Calendar */}
+                    <div className="picker-column calendar-col">
+                      <div className="calendar-header">
+                        <button 
+                          type="button" 
+                          onClick={handlePrevMonth} 
+                          disabled={isPrevMonthDisabled()} 
+                          className="calendar-nav-btn"
+                        >
+                          &lt;
+                        </button>
+                        <span className="calendar-month-year">
+                          {months[pickerMonth]} {pickerYear}
+                        </span>
+                        <button type="button" onClick={handleNextMonth} className="calendar-nav-btn">
+                          &gt;
+                        </button>
+                      </div>
+                      
+                      <div className="calendar-weekdays">
+                        {weekDays.map(day => (
+                          <div key={day} className="calendar-weekday">{day}</div>
+                        ))}
+                      </div>
+                      
+                      <div className="calendar-days-grid">
+                        {renderCalendarGrid()}
+                      </div>
+                    </div>
+                    
+                    {/* Divider line for desktop */}
+                    <div className="picker-divider"></div>
+
+                    {/* Right Column: Time Slots */}
+                    <div className="picker-column time-col">
+                      <h4 className="time-picker-title">Select Event Time</h4>
+                      
+                      {renderTimeCategory('Morning (Pratah)', ['06:00', '07:30', '09:00', '10:30'])}
+                      {renderTimeCategory('Afternoon (Madhyahna)', ['12:00', '13:30', '15:00'])}
+                      {renderTimeCategory('Evening & Night', ['16:30', '18:00', '19:30', '21:00'])}
+
+                      <div className="spinner-divider"></div>
+                      
+                      {/* Precision spinner */}
+                      <div className="custom-time-spinner">
+                        <span className="spinner-label">Custom Precise Time:</span>
+                        <div className="spinner-controls-row">
+                          <div className="spinner-control">
+                            <button type="button" onClick={decrementHour} className="spinner-btn">-</button>
+                            <span className="spinner-val">{String(customHour).padStart(2, '0')}</span>
+                            <button type="button" onClick={incrementHour} className="spinner-btn">+</button>
+                          </div>
+                          <span className="spinner-colon">:</span>
+                          <div className="spinner-control">
+                            <button type="button" onClick={decrementMinute} className="spinner-btn">-</button>
+                            <span className="spinner-val">{String(customMinute).padStart(2, '0')}</span>
+                            <button type="button" onClick={incrementMinute} className="spinner-btn">+</button>
+                          </div>
+                          <button type="button" onClick={toggleAmpm} className="spinner-ampm-btn">
+                            {customAmpm}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Footer */}
+                  <div className="picker-footer">
+                    <div className="picker-summary">
+                      <span className="summary-label">Selected Date & Time:</span>
+                      <span className="summary-value">
+                        {eventDate ? formatDateLabel(eventDate) : 'Not selected'}
+                        {eventDate && eventTime ? ` at ${formatTimeLabel(eventTime)}` : ''}
+                      </span>
+                    </div>
+                    <button 
+                      type="button" 
+                      className="picker-confirm-btn" 
+                      onClick={() => {
+                        if (!eventDate) {
+                          const todayStr = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`;
+                          setEventDate(todayStr);
+                        }
+                        if (!eventTime) {
+                          setEventTime('09:00');
+                        }
+                        setIsPickerOpen(false);
+                      }}
+                    >
+                      Confirm
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="calc-form-group">
