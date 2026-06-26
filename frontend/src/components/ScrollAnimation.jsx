@@ -176,7 +176,7 @@ const ScrollAnimation = () => {
 
             {/* Stage 2: Exquisite Dolls (Frames 6-11) */}
             <div className={`scrolly-panel right ${currentFrame >= 6 && currentFrame <= 11 ? 'active' : ''}`}>
-              <img src="/details/detail_doll.jpg" alt="Saree Doll Setup" className="scrolly-panel-bg-img" />
+              <img src="/details/detail_doll.jpg" alt="Saree Doll Setup" className="scrolly-panel-bg-img" style={{ objectPosition: 'top center' }} />
               <div className="scrolly-panel-overlay" />
               <div className="scrolly-panel-content">
                 <span className="scrolly-tag">Exquisite Artistry</span>
