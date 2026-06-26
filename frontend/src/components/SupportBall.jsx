@@ -1,31 +1,65 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Headphones, Send, CheckCircle2, AlertCircle } from 'lucide-react';
+import { X, Headphones, Send } from 'lucide-react';
 import { API_URL } from '../utils/api';
 
 const SupportBall = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [message, setMessage] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [inputText, setInputText] = useState('');
+  const [currentStep, setCurrentStep] = useState('name'); // name, phone, message, submitting, finished
   
-  // Local request state
+  // Collected fields
+  const [tempName, setTempName] = useState('');
+  const [tempPhone, setTempPhone] = useState('');
+  const [loading, setLoading] = useState(false);
+  
+  // Chat log history
+  const [chatLog, setChatLog] = useState([
+    { sender: 'bot', text: 'Hello! I can help you request call support from our admin team. What is your name?' }
+  ]);
+  
+  // Active call request reference
   const [localRequest, setLocalRequest] = useState(null);
   
   const containerRef = useRef(null);
+  const chatEndRef = useRef(null);
 
-  // Load from localStorage on mount
+  // Auto-scroll chat to bottom
+  useEffect(() => {
+    if (chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [chatLog, isOpen]);
+
+  // Load request from localStorage on mount/open
   useEffect(() => {
     const saved = localStorage.getItem('thambulam_call_request');
     if (saved) {
       try {
-        setLocalRequest(JSON.parse(saved));
+        const parsed = JSON.parse(saved);
+        setLocalRequest(parsed);
+        setChatLog([
+          { sender: 'bot', text: 'You have an active call support request.' },
+          { sender: 'bot', text: `Name: ${parsed.name}` },
+          { sender: 'bot', text: `Phone: ${parsed.phone}` },
+          { sender: 'bot', text: `Status: ${parsed.status}` }
+        ]);
+        setCurrentStep('finished');
       } catch (e) {
         console.error(e);
       }
+    } else {
+      // If no active request, check if logged-in user can pre-fill name/phone
+      const storedUser = localStorage.getItem('user');
+      if (storedUser && isOpen && currentStep === 'name' && chatLog.length === 1) {
+        try {
+          const parsed = JSON.parse(storedUser);
+          if (parsed.name) {
+            setInputText(parsed.name);
+          }
+        } catch (e) {}
+      }
     }
-  }, []);
+  }, [isOpen]);
 
   // Close when clicking outside
   useEffect(() => {
@@ -38,7 +72,7 @@ const SupportBall = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Poll status from backend if there is an active request
+  // Poll request status from backend
   useEffect(() => {
     if (!localRequest || localRequest.status === 'Completed') return;
 
@@ -51,152 +85,211 @@ const SupportBall = () => {
             const updated = { ...localRequest, status: data.status };
             setLocalRequest(updated);
             localStorage.setItem('thambulam_call_request', JSON.stringify(updated));
+            
+            // Append status update to chat log
+            setChatLog(prev => [
+              ...prev,
+              { sender: 'bot', text: `⚠️ Request Status Update: ${data.status}` },
+              data.status === 'Approved'
+                ? { sender: 'bot', text: `Your request has been APPROVED! Admin will call you shortly on ${localRequest.phone}.` }
+                : { sender: 'bot', text: 'Your support request has been completed. Thank you!' }
+            ]);
           }
         }
       } catch (error) {
-        console.error("Error polling request status", error);
+        console.error("Error polling request status:", error);
       }
     };
 
-    // Check immediately, then poll every 10 seconds
     checkStatus();
     const interval = setInterval(checkStatus, 10000);
     return () => clearInterval(interval);
   }, [localRequest]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!name || !phone) {
-      setError('Name and Phone are required.');
-      return;
-    }
+  const submitRequest = async (rName, rPhone, rMessage) => {
     setLoading(true);
-    setError('');
-    
     try {
       const res = await fetch(`${API_URL}/call-requests`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ name, phone, message })
+        body: JSON.stringify({ name: rName, phone: rPhone, message: rMessage })
       });
       const data = await res.json();
       if (res.ok) {
         const reqData = {
           id: data.data.id,
-          name,
-          phone,
+          name: rName,
+          phone: rPhone,
           status: 'Pending'
         };
-        setLocalRequest(reqData);
         localStorage.setItem('thambulam_call_request', JSON.stringify(reqData));
-        setName('');
-        setPhone('');
-        setMessage('');
+        setLocalRequest(reqData);
+        setChatLog(prev => [
+          ...prev.slice(0, -1), // remove 'Submitting request...' bubble
+          { sender: 'bot', text: 'Perfect! I have logged your request directly in the Admin Panel.' },
+          { sender: 'bot', text: `Status: Pending. Admin will call you back on ${rPhone} soon.` }
+        ]);
+        setCurrentStep('finished');
       } else {
-        setError(data.message || 'Submission failed.');
+        setChatLog(prev => [
+          ...prev.slice(0, -1),
+          { sender: 'bot', text: `Oops! ${data.message || 'Submission failed.'}` },
+          { sender: 'bot', text: 'Let\'s try again. What is your name?' }
+        ]);
+        setCurrentStep('name');
       }
     } catch (err) {
       console.error(err);
-      setError('Connection error. Please try again.');
+      setChatLog(prev => [
+        ...prev.slice(0, -1),
+        { sender: 'bot', text: 'Connection error. Please check your network and try again.' },
+        { sender: 'bot', text: 'What is your name?' }
+      ]);
+      setCurrentStep('name');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleSend = (e) => {
+    if (e) e.preventDefault();
+    const text = inputText.trim();
+    if (!text && currentStep !== 'message') return;
+
+    setInputText('');
+
+    if (currentStep === 'name') {
+      setTempName(text);
+      setChatLog(prev => [
+        ...prev,
+        { sender: 'user', text },
+        { sender: 'bot', text: `Thanks, ${text}! What phone number can we call you on?` }
+      ]);
+      // Attempt to pre-fill phone number if user is logged in
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        try {
+          const parsed = JSON.parse(storedUser);
+          if (parsed.phone) {
+            setInputText(parsed.phone);
+          }
+        } catch (err) {}
+      }
+      setCurrentStep('phone');
+    } else if (currentStep === 'phone') {
+      setTempPhone(text);
+      setChatLog(prev => [
+        ...prev,
+        { sender: 'user', text },
+        { sender: 'bot', text: 'Got it. Do you have any extra requirements or notes for the admin? (Type below or click Skip)' }
+      ]);
+      setCurrentStep('message');
+    } else if (currentStep === 'message') {
+      const msgText = text || 'No extra requirements';
+      setChatLog(prev => [
+        ...prev,
+        { sender: 'user', text: msgText },
+        { sender: 'bot', text: 'Submitting request...' }
+      ]);
+      setCurrentStep('submitting');
+      submitRequest(tempName, tempPhone, text);
+    }
+  };
+
+  const handleSkipMessage = () => {
+    setInputText('');
+    setChatLog(prev => [
+      ...prev,
+      { sender: 'user', text: 'Skipped extra notes' },
+      { sender: 'bot', text: 'Submitting request...' }
+    ]);
+    setCurrentStep('submitting');
+    submitRequest(tempName, tempPhone, '');
+  };
+
   const handleReset = () => {
     localStorage.removeItem('thambulam_call_request');
     setLocalRequest(null);
-    setError('');
+    setChatLog([
+      { sender: 'bot', text: 'Hello! I can help you request call support from our admin team. What is your name?' }
+    ]);
+    
+    // Pre-fill name if user logged in
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        const parsed = JSON.parse(storedUser);
+        if (parsed.name) {
+          setInputText(parsed.name);
+        }
+      } catch (err) {}
+    }
+    setCurrentStep('name');
   };
 
   return (
     <div className="support-ball-container" ref={containerRef}>
       {isOpen && (
-        <div className="support-menu glass support-form-menu">
+        <div className="support-menu glass support-chat-menu">
           <div className="support-header">
-            <h4>Request Call Support</h4>
-            <p>Enter details and admin will call you.</p>
+            <h4>Support Assistant</h4>
+            <p>We schedule call support requests.</p>
           </div>
           
-          {localRequest ? (
-            <div className="support-status-view">
-              {localRequest.status === 'Pending' && (
-                <div className="status-box pending">
-                  <div className="spinner-mini" style={{ margin: '0 auto 12px auto' }}></div>
-                  <h5>Request Pending</h5>
-                  <p>We've sent your request. Admin will review and approve soon.</p>
+          <div className="chat-log-container">
+            {chatLog.map((msg, index) => (
+              <div key={index} className={`chat-bubble-wrapper ${msg.sender}`}>
+                <div className={`chat-bubble ${msg.sender}`}>
+                  {msg.text}
                 </div>
-              )}
-              {localRequest.status === 'Approved' && (
-                <div className="status-box approved">
-                  <CheckCircle2 size={32} color="var(--primary-gold)" style={{ margin: '0 auto 12px auto' }} />
-                  <h5>Request Approved!</h5>
-                  <p>Admin approved your request and will call you shortly on <strong>{localRequest.phone}</strong>.</p>
-                </div>
-              )}
-              {localRequest.status === 'Completed' && (
-                <div className="status-box completed">
-                  <CheckCircle2 size={32} color="var(--emerald)" style={{ margin: '0 auto 12px auto' }} />
-                  <h5>Query Completed</h5>
-                  <p>Your call support request has been completed. Thank you!</p>
-                  <button onClick={handleReset} className="support-reset-btn">
-                    Request New Call
-                  </button>
-                </div>
-              )}
-              {localRequest.status !== 'Completed' && (
-                <button onClick={handleReset} className="support-cancel-btn">
-                  Cancel Request
+              </div>
+            ))}
+            <div ref={chatEndRef} />
+          </div>
+          
+          {currentStep !== 'submitting' && (
+            <div className="chat-input-area-wrapper">
+              {currentStep === 'message' && (
+                <button 
+                  type="button" 
+                  onClick={handleSkipMessage} 
+                  className="chat-skip-btn"
+                >
+                  Skip extra notes
                 </button>
               )}
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="support-form">
-              {error && (
-                <div className="support-error">
-                  <AlertCircle size={14} style={{ marginRight: '4px' }} />
-                  {error}
-                </div>
+              {currentStep === 'finished' ? (
+                <button 
+                  type="button" 
+                  onClick={handleReset} 
+                  className="support-reset-btn"
+                  style={{ margin: 0 }}
+                >
+                  Request New Callback
+                </button>
+              ) : (
+                <form onSubmit={handleSend} className="chat-input-form">
+                  <input 
+                    type={currentStep === 'phone' ? 'tel' : 'text'}
+                    placeholder={
+                      currentStep === 'name' ? 'Type your name...' :
+                      currentStep === 'phone' ? 'Type your phone number...' :
+                      'Type any notes/messages...'
+                    }
+                    className="chat-input-field"
+                    value={inputText}
+                    onChange={(e) => setInputText(e.target.value)}
+                    required={currentStep !== 'message'}
+                    autoFocus
+                  />
+                  <button type="submit" className="chat-send-btn">
+                    <Send size={16} />
+                  </button>
+                </form>
               )}
-              <div className="support-form-group">
-                <input 
-                  type="text" 
-                  placeholder="Your Name" 
-                  className="support-input"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="support-form-group">
-                <input 
-                  type="tel" 
-                  placeholder="Your Phone Number" 
-                  className="support-input"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="support-form-group">
-                <textarea 
-                  placeholder="Message (Optional)" 
-                  className="support-textarea"
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                />
-              </div>
-              <button type="submit" className="support-submit-btn" disabled={loading}>
-                {loading ? 'Submitting...' : (
-                  <>
-                    <Send size={14} style={{ marginRight: '6px' }} />
-                    <span>Submit Request</span>
-                  </>
-                )}
-              </button>
-            </form>
+            </div>
           )}
         </div>
       )}
