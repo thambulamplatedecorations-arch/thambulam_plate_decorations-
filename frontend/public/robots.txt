@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /orders
+
+Sitemap: https://thambulam-plate-decorations.vercel.app/sitemap.xml
