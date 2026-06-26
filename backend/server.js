@@ -29,6 +29,7 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/orders', require('./routes/orders'));
 app.use('/api/services', require('./routes/services'));
 app.use('/api/users', require('./routes/users'));
+app.use('/api/call-requests', require('./routes/callRequests'));
 
 // Global error handler
 app.use((err, req, res, next) => {

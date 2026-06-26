@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { API_URL, getAuthHeaders } from '../utils/api';
-import { Calendar, Clock, MapPin, ClipboardList, Users, Upload, ArrowLeft, RefreshCw, LogOut, CheckCircle, XCircle } from 'lucide-react';
+import { Calendar, Clock, MapPin, ClipboardList, Users, Upload, ArrowLeft, RefreshCw, LogOut, CheckCircle, XCircle, Headphones, Phone } from 'lucide-react';
 
 const AdminDashboard = ({ user, handleLogout }) => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('orders'); // orders, users, services
+  const [activeTab, setActiveTab] = useState('orders'); // orders, users, services, call-requests
   
   // Data States
   const [orders, setOrders] = useState([]);
   const [usersList, setUsersList] = useState([]);
+  const [callRequests, setCallRequests] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
@@ -56,12 +57,43 @@ const AdminDashboard = ({ user, handleLogout }) => {
         } else {
           setError('Failed to fetch user list.');
         }
+      } else if (activeTab === 'call-requests') {
+        const res = await fetch(`${API_URL}/call-requests`, { headers: getAuthHeaders() });
+        if (res.ok) {
+          const data = await res.json();
+          setCallRequests(data);
+        } else {
+          setError('Failed to fetch call requests.');
+        }
       }
     } catch (err) {
       console.error(err);
       setError('Connection to backend failed.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleUpdateCallStatus = async (requestId, newStatus) => {
+    setError('');
+    setSuccessMsg('');
+    try {
+      const res = await fetch(`${API_URL}/call-requests/${requestId}`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (res.ok) {
+        setSuccessMsg(`Call request status updated to "${newStatus}" successfully.`);
+        fetchData();
+      } else {
+        const data = await res.json();
+        setError(data.message || 'Failed to update request status.');
+      }
+    } catch (err) {
+      console.error(err);
+      setError('Error communicating with the server.');
     }
   };
 
@@ -190,6 +222,13 @@ const AdminDashboard = ({ user, handleLogout }) => {
         >
           <Upload size={16} style={{verticalAlign: 'middle', marginRight: '6px'}} />
           Upload Service Image
+        </button>
+        <button 
+          className={`admin-tab-btn ${activeTab === 'call-requests' ? 'active' : ''}`}
+          onClick={() => setActiveTab('call-requests')}
+        >
+          <Headphones size={16} style={{verticalAlign: 'middle', marginRight: '6px'}} />
+          Call Requests
         </button>
       </div>
 
@@ -392,6 +431,73 @@ const AdminDashboard = ({ user, handleLogout }) => {
                 {uploading ? 'Uploading to Cloudinary & saving to Database...' : 'Upload Design to Catalog'}
               </button>
             </form>
+          </div>
+        )}
+
+        {activeTab === 'call-requests' && (
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h3 style={{ color: 'var(--text-gold)', fontFamily: 'var(--font-serif)', fontSize: '1.5rem' }}>Call Support Requests</h3>
+              <button onClick={fetchData} className="action-btn" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <RefreshCw size={14} /> Sync Calls
+              </button>
+            </div>
+
+            {loading ? (
+              <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-gold)' }}>Loading call requests...</div>
+            ) : callRequests.length === 0 ? (
+              <p style={{ textAlign: 'center', padding: '40px', color: 'var(--text-gray)' }}>No call support requests found.</p>
+            ) : (
+              <div className="admin-table-container">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Customer Name</th>
+                      <th>Phone Number</th>
+                      <th>Message / Note</th>
+                      <th>Date Requested</th>
+                      <th>Status</th>
+                      <th>Admin Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {callRequests.map((req) => (
+                      <tr key={req.id}>
+                        <td style={{ fontWeight: '600' }}>{req.name}</td>
+                        <td>
+                          <a href={`tel:${req.phone}`} style={{ color: 'var(--text-gold)', fontWeight: '500' }}>
+                            📞 {req.phone}
+                          </a>
+                        </td>
+                        <td>
+                          <div style={{ maxWidth: '250px', fontSize: '0.85rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={req.message}>
+                            {req.message || <span style={{ color: 'var(--text-gray)', fontStyle: 'italic' }}>No message</span>}
+                          </div>
+                        </td>
+                        <td>{formatDate(req.createdAt)}</td>
+                        <td>
+                          <span className={`badge ${req.status.toLowerCase()}`}>{req.status}</span>
+                        </td>
+                        <td>
+                          {req.status === 'Pending' && (
+                            <>
+                              <button className="action-btn accept" onClick={() => handleUpdateCallStatus(req.id, 'Approved')}>Approve</button>
+                              <button className="action-btn cancel" onClick={() => handleUpdateCallStatus(req.id, 'Completed')}>Mark Completed</button>
+                            </>
+                          )}
+                          {req.status === 'Approved' && (
+                            <button className="action-btn complete" onClick={() => handleUpdateCallStatus(req.id, 'Completed')}>Mark Completed</button>
+                          )}
+                          {req.status === 'Completed' && (
+                            <span style={{ fontSize: '0.85rem', color: 'var(--text-gray)' }}>Call Completed</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
       </div>
